@@ -13,6 +13,8 @@ import {
   FaHome
 } from "react-icons/fa";
 
+
+
 export default function Dashboard() {
   const nav = useNavigate();
 
@@ -26,10 +28,6 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("date");
   const [open, setOpen] = useState(false);
-
-  // 👉 Tour states
-  const [showTour, setShowTour] = useState(false);
-  const [tourStep, setTourStep] = useState(0);
 
   /* ================= FETCH ================= */
   const fetchFiles = useCallback(async () => {
@@ -47,12 +45,6 @@ export default function Dashboard() {
   useEffect(() => {
     fetchFiles();
     fetchFolders();
-
-    // 👉 Show tour only once
-    const tourDone = localStorage.getItem("dashboardTourDone");
-    if (!tourDone) {
-      setShowTour(true);
-    }
   }, [fetchFiles, fetchFolders]);
 
   /* ================= ACTIONS ================= */
@@ -95,7 +87,8 @@ export default function Dashboard() {
     fetchFiles();
   };
 
-  /* ================= FILE OPEN / DOWNLOAD ================= */
+  /* ================= FILE OPEN / DOWNLOAD (FIXED) ================= */
+
   const openFileInNewTab = async (fileId) => {
     try {
       const res = await API.get(`/files/open/${fileId}`);
@@ -114,43 +107,29 @@ export default function Dashboard() {
     }
   };
 
-  /* ================= TOUR CONTROLS ================= */
-  const nextTourStep = () => {
-    if (tourStep === 2) {
-      endTour();
-    } else {
-      setTourStep((s) => s + 1);
-    }
-  };
-
-  const endTour = () => {
-    localStorage.setItem("dashboardTourDone", "true");
-    setShowTour(false);
-    setTourStep(0);
-  };
-
   /* ================= HELPERS ================= */
+  const getFileType = (name) => name.split(".").pop().toUpperCase();
+
   const sortedFiles = [...files]
-    .filter((f) =>
-      f.name.toLowerCase().includes(search.toLowerCase())
-    )
+    .filter(f => f.name.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) =>
       sort === "name"
         ? a.name.localeCompare(b.name)
         : new Date(b.createdAt) - new Date(a.createdAt)
     );
 
-  const recentFiles = sortedFiles.filter((f) => !f.isFolder).slice(0, 4);
+  const recentFiles = sortedFiles.filter(f => !f.isFolder).slice(0, 4);
+
+  const usedStorageMB = files.length * 5;
+  const totalStorageMB = 15000;
 
   /* ================= UI ================= */
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gray-100">
 
-      {/* ================= SIDEBAR ================= */}
+      {/* SIDEBAR */}
       <div className="w-full md:w-64 bg-white shadow-md p-4 md:p-6">
-        <h2 className="text-xl font-bold text-blue-600 mb-4">
-          ☁ Cloud Drive
-        </h2>
+        <h2 className="text-xl font-bold text-blue-600 mb-4">☁ Cloud Drive</h2>
 
         <div
           onClick={() => {
@@ -164,36 +143,63 @@ export default function Dashboard() {
 
         <p className="text-gray-400 text-xs mt-4 mb-2">FOLDERS</p>
 
-        {folders.map((f) => (
-          <div
-            key={f._id}
-            onClick={() => {
-              setCurrentFolder(f._id);
-              setCurrentName(f.name);
-            }}
-            className="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-gray-100"
-          >
-            <FaFolder className="text-yellow-400" />
-            <span className="truncate">{f.name}</span>
+        <div className="space-y-1 max-h-40 md:max-h-full overflow-auto">
+          {folders.map((f) => (
+            <div
+              key={f._id}
+              onClick={() => {
+                setCurrentFolder(f._id);
+                setCurrentName(f.name);
+              }}
+              className="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-gray-100"
+            >
+              <FaFolder className="text-yellow-400" />
+              <span className="truncate">{f.name}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* STORAGE */}
+        <div className="mt-6">
+          <p className="text-xs text-gray-500 mb-1">Storage used</p>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-blue-600 h-2 rounded-full"
+              style={{ width: `${(usedStorageMB / totalStorageMB) * 100}%` }}
+            />
           </div>
-        ))}
+          <p className="text-xs text-gray-500 mt-1">
+            {usedStorageMB} MB of {totalStorageMB / 1000} GB
+          </p>
+        </div>
 
         <button
           onClick={createFolder}
-          className="bg-blue-600 text-white py-2 rounded-lg mt-4 w-full"
+          className="bg-blue-600 text-white py-2 rounded-lg mt-4 w-full hover:bg-blue-700"
         >
           + New Folder
         </button>
       </div>
 
-      {/* ================= MAIN ================= */}
+      {/* MAIN */}
       <div className="flex-1 p-4 md:p-8 overflow-auto">
 
         {/* HEADER */}
-        <div className="flex justify-between mb-6">
-          <h3 className="font-semibold text-lg">{currentName}</h3>
+        <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
+          <div>
+            <p className="text-sm text-gray-500">Home / {currentName}</p>
+            <h3 className="text-lg font-semibold">{currentName}</h3>
+          </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap gap-3 items-center">
+            <select
+              onChange={(e) => setSort(e.target.value)}
+              className="border px-3 py-2 rounded-lg"
+            >
+              <option value="date">Sort by Date</option>
+              <option value="name">Sort by Name</option>
+            </select>
+
             <input
               placeholder="Search files..."
               className="border px-3 py-2 rounded-lg"
@@ -207,17 +213,14 @@ export default function Dashboard() {
             />
 
             {open && (
-              <button
-                onClick={logout}
-                className="text-sm text-red-600"
-              >
+              <button onClick={logout} className="text-sm text-red-600">
                 Logout
               </button>
             )}
           </div>
         </div>
 
-        {/* ================= RECENT FILES ================= */}
+        {/* RECENT FILES (FIXED) */}
         {recentFiles.length > 0 && (
           <>
             <h4 className="font-semibold mb-3">Recent files</h4>
@@ -226,7 +229,7 @@ export default function Dashboard() {
                 <div
                   key={f._id}
                   onClick={() => openFileInNewTab(f._id)}
-                  className="bg-white p-4 rounded-lg shadow cursor-pointer hover:shadow-md"
+                  className="bg-white p-4 rounded-lg shadow cursor-pointer hover:shadow-md transition"
                 >
                   <FaFileAlt className="text-blue-500 mb-2" />
                   <p className="text-sm truncate">{f.name}</p>
@@ -236,103 +239,97 @@ export default function Dashboard() {
           </>
         )}
 
-        {/* ================= FILE GRID ================= */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {sortedFiles.map((f) => (
-            <div
-              key={f._id}
-              onClick={() => {
-                if (!f.isFolder) openFileInNewTab(f._id);
-              }}
-              className={`group bg-white p-5 rounded-xl border hover:shadow-lg relative ${
-                !f.isFolder ? "cursor-pointer" : ""
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                {f.isFolder ? (
-                  <FaFolder className="text-yellow-400" />
-                ) : (
-                  <FaFileAlt className="text-blue-500" />
-                )}
-                <span className="truncate font-medium">{f.name}</span>
-              </div>
-
-              <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-5 opacity-0 group-hover:opacity-100">
-                {!f.isFolder && (
-                  <FaDownload
-                    className="hover:text-blue-600"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      downloadFile(f._id);
-                    }}
-                  />
-                )}
-                <FaEdit
-                  className="hover:text-green-600"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    rename(f._id, f.name);
-                  }}
-                />
-                <FaTrash
-                  className="hover:text-red-600"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    remove(f._id, f.name);
-                  }}
-                />
-              </div>
-            </div>
-          ))}
+        {/* UPLOAD */}
+        <div
+          className="border-2 border-dashed border-gray-300 bg-white p-6 md:p-10 rounded-xl
+                     text-center mb-8 hover:border-blue-400 hover:bg-blue-50"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            upload(e.dataTransfer.files[0]);
+          }}
+        >
+          Drag & Drop files here or click to upload
+          <input
+            type="file"
+            className="block mx-auto mt-3"
+            onChange={(e) => upload(e.target.files[0])}
+          />
         </div>
-      </div>
 
-      {/* ================= TOUR ================= */}
-      {showTour && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-xl w-80 text-center">
-            {tourStep === 0 && (
-              <>
-                <h3 className="font-semibold mb-2">Welcome 👋</h3>
-                <p className="text-sm text-gray-600">
-                  Use the sidebar to navigate folders.
-                </p>
-              </>
-            )}
-            {tourStep === 1 && (
-              <>
-                <h3 className="font-semibold mb-2">Upload Files 📤</h3>
-                <p className="text-sm text-gray-600">
-                  Drag & drop or upload files easily.
-                </p>
-              </>
-            )}
-            {tourStep === 2 && (
-              <>
-                <h3 className="font-semibold mb-2">Manage Files 📁</h3>
-                <p className="text-sm text-gray-600">
-                  Click any file to open it instantly.
-                </p>
-              </>
-            )}
-
-            <div className="flex justify-between mt-4">
-              <button
-                onClick={endTour}
-                className="text-sm text-gray-500"
-              >
-                Skip
-              </button>
-              <button
-                onClick={nextTourStep}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
-              >
-                {tourStep === 2 ? "Finish" : "Next"}
-              </button>
-            </div>
+        {/* FILE GRID */}
+        {sortedFiles.length === 0 ? (
+          <div className="text-center text-gray-400 mt-20">
+            <FaFolder size={48} className="mx-auto mb-4" />
+            <p>No files here yet</p>
+            <p className="text-sm">Upload files to get started</p>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {sortedFiles.map((f) => (
+              <div
+  key={f._id}
+  onClick={() => {
+    if (!f.isFolder) {
+      openFileInNewTab(f._id);
+    }
+  }}
+  className={`
+    group bg-white p-5 rounded-xl border hover:shadow-lg relative
+    ${!f.isFolder ? "cursor-pointer" : ""}
+  `}
+>
+
+                <div className="flex items-center gap-2 mb-2">
+                  {f.isFolder
+                    ? <FaFolder className="text-yellow-400" />
+                    : <FaFileAlt className="text-blue-500" />}
+                  <span className="truncate font-medium">{f.name}</span>
+                </div>
+
+                <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                  {getFileType(f.name)}
+                </span>
+
+                <p className="text-xs text-gray-400 mt-2">
+                  Modified {new Date(f.createdAt).toLocaleDateString()}
+                </p>
+
+                <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-5 opacity-0 group-hover:opacity-100">
+  {!f.isFolder && (
+    <FaDownload
+      className="cursor-pointer hover:text-blue-600"
+      onClick={(e) => {
+        e.stopPropagation();
+        downloadFile(f._id);
+      }}
+    />
+  )}
+
+  <FaEdit
+    className="cursor-pointer hover:text-green-600"
+    onClick={(e) => {
+      e.stopPropagation();
+      rename(f._id, f.name);
+    }}
+  />
+
+  <FaTrash
+    className="cursor-pointer hover:text-red-600"
+    onClick={(e) => {
+      e.stopPropagation();
+      remove(f._id, f.name);
+    }}
+  />
+</div>
+
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
+
+
