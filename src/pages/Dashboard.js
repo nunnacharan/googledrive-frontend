@@ -14,7 +14,7 @@ import {
   FaHome,
   FaShareAlt,
   FaCompress,
-  FaFileWord        // ✅ ADD THIS
+
 } from "react-icons/fa";
 ;
 
@@ -326,24 +326,7 @@ export default function Dashboard() {
     fetchFiles();
   }}
 />
-    {f.name.endsWith(".pdf") && (
-  <FaFileWord
-    className="cursor-pointer hover:text-blue-700"
-    title="Convert to Word"
-    onClick={async () => {
-      try {
-        toast.loading("Converting...");
-        await API.post(`/convert/pdf-to-word/${f._id}`);
-        toast.dismiss();
-        toast.success("Word file created");
-        fetchFiles();
-      } catch (err) {
-        toast.dismiss();
-        toast.error("Conversion failed");
-      }
-    }}
-  />
-)}
+   
 
 
 
@@ -361,6 +344,7 @@ export default function Dashboard() {
     </div>
   );
 }     
+
 
 
 
