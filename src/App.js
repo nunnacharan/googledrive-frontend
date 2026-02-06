@@ -8,12 +8,13 @@ import Dashboard from "./pages/Dashboard";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ActivateAccount from "./pages/ActivateAccount";
+import Share from "./pages/Share";
 
 /* ================= ROUTE GUARDS ================= */
 import PrivateRoute from "./components/PrivateRoute";
 import PublicRoute from "./components/PublicRoute";
 
-/* ================= THEME (Dark Mode) ================= */
+/* ================= THEME ================= */
 import { ThemeProvider } from "./context/Theme";
 
 /* ================= TOASTS ================= */
@@ -91,6 +92,9 @@ function App() {
             }
           />
 
+          {/* ================= SHARE ROUTE (PHASE 1) ================= */}
+          {/* Anyone with link can access */}
+          <Route path="/share/:token" element={<Share />} />
 
           {/* ================= PRIVATE ROUTES ================= */}
 
@@ -103,7 +107,6 @@ function App() {
               </PrivateRoute>
             }
           />
-
 
           {/* ================= FALLBACK ================= */}
 
