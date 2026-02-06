@@ -13,6 +13,7 @@ import {
   FaHome
 } from "react-icons/fa";
 
+const BACKEND_URL = "https://backend-2-up29.onrender.com";
 
 export default function Dashboard() {
   const nav = useNavigate();
@@ -309,4 +310,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
