@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 import toast from "react-hot-toast";
+import { FaShareAlt } from "react-icons/fa";
 
 import {
   FaFolder,
@@ -268,18 +269,9 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {sortedFiles.map((f) => (
               <div
-  key={f._id}
-  onClick={() => {
-    if (!f.isFolder) {
-      openFileInNewTab(f._id);
-    }
-  }}
-  className={`
-    group bg-white p-5 rounded-xl border hover:shadow-lg relative
-    ${!f.isFolder ? "cursor-pointer" : ""}
-  `}
->
-
+                key={f._id}
+                className="group bg-white p-5 rounded-xl border hover:shadow-lg relative"
+              >
                 <div className="flex items-center gap-2 mb-2">
                   {f.isFolder
                     ? <FaFolder className="text-yellow-400" />
@@ -296,30 +288,33 @@ export default function Dashboard() {
                 </p>
 
                 <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-5 opacity-0 group-hover:opacity-100">
+
   {!f.isFolder && (
-    <FaDownload
-      className="cursor-pointer hover:text-blue-600"
-      onClick={(e) => {
-        e.stopPropagation();
-        downloadFile(f._id);
-      }}
-    />
+    <>
+      <FaDownload
+        className="cursor-pointer hover:text-blue-600"
+        onClick={() => downloadFile(f._id)}
+      />
+
+      <FaShareAlt
+        className="cursor-pointer hover:text-purple-600"
+        onClick={async () => {
+          const res = await API.post(`/files/share/${f._id}`);
+          navigator.clipboard.writeText(res.data.shareLink);
+          toast.success("Share link copied!");
+        }}
+      />
+    </>
   )}
 
   <FaEdit
     className="cursor-pointer hover:text-green-600"
-    onClick={(e) => {
-      e.stopPropagation();
-      rename(f._id, f.name);
-    }}
+    onClick={() => rename(f._id, f.name)}
   />
 
   <FaTrash
     className="cursor-pointer hover:text-red-600"
-    onClick={(e) => {
-      e.stopPropagation();
-      remove(f._id, f.name);
-    }}
+    onClick={() => remove(f._id, f.name)}
   />
 </div>
 
@@ -330,6 +325,4 @@ export default function Dashboard() {
       </div>
     </div>
   );
-}
-
-
+}     
