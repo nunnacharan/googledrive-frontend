@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 import toast from "react-hot-toast";
 import { FaShareAlt } from "react-icons/fa";
+import { FaCompress } from "react-icons/fa";
 
 import {
   FaFolder,
@@ -311,6 +312,18 @@ export default function Dashboard() {
     className="cursor-pointer hover:text-green-600"
     onClick={() => rename(f._id, f.name)}
   />
+      <FaCompress
+  className="cursor-pointer hover:text-orange-600"
+  title="Compress"
+  onClick={async () => {
+    toast.loading("Compressing...");
+    await API.post(`/compress/${f._id}`);
+    toast.dismiss();
+    toast.success("Compressed file added");
+    fetchFiles();
+  }}
+/>
+
 
   <FaTrash
     className="cursor-pointer hover:text-red-600"
@@ -326,3 +339,4 @@ export default function Dashboard() {
     </div>
   );
 }     
+
