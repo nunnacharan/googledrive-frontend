@@ -2,9 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 import toast from "react-hot-toast";
-import { FaShareAlt } from "react-icons/fa";
-import { FaCompress } from "react-icons/fa";
-import { FaFileWord } from "react-icons/fa";
+
 
 import {
   FaFolder,
@@ -363,5 +361,6 @@ export default function Dashboard() {
     </div>
   );
 }     
+
 
 
